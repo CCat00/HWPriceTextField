@@ -1,199 +1,151 @@
-///////////////////////////////////////////////////////////////////////////////
 //
+//  PriceTextField.m
+//  CustomhouseDriver
 //
+//  Created by 韩威 on 16/5/27.
+//  Copyright © 2016年 AndLiSoft. All rights reserved.
 //
-//
-//
-////////////////////////////////////////////////////////////////////////////////
 
+#import "PriceTextField.h"
 
-#import "HWPriceTextField.h"
+#define myDotNumbers        @"0123456789.\n"
+#define myNumbers           @"0123456789\n"
 
-@interface HWPriceTextField () <UITextFieldDelegate>
-
-@property (nonatomic, copy) NSMutableString *lastString;
+@interface PriceTextField () <UITextFieldDelegate>
 
 @end
 
+@implementation PriceTextField
 
-@implementation HWPriceTextField
-
-#pragma mark - Init
 - (instancetype)initWithFrame:(CGRect)frame
 {
     self = [super initWithFrame:frame];
     if (self) {
-        [self comInit];
+        [self setup];
     }
     return self;
 }
 
-- (instancetype)initWithCoder:(NSCoder *)aDecoder
+- (instancetype)initWithCoder:(NSCoder *)coder
 {
-    self = [super initWithCoder:aDecoder];
+    self = [super initWithCoder:coder];
     if (self) {
-        [self comInit];
+        [self setup];
     }
     return self;
 }
 
-- (void)comInit
-{
-    //Delegate
+- (void)setup {
+    //    self.priceTextFieldType = PriceTextFieldTypePrice;
+    self.isPriceType = YES;
+    //    self.keyboardType = UIKeyboardTypeNumbersAndPunctuation;
     self.delegate = self;
-    //Action
-    [self addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingChanged];
-    //Default is price
-    _type = TextFieldTypePrice;
 }
 
-#pragma mark - Setter
-- (void)setType:(TextFieldType)type
-{
-    if (_type != type) {
-        _type = type;
+
+#pragma mark - setter
+
+//- (void)setPriceTextFieldType:(PriceTextFieldType)priceTextFieldType {
+//    _priceTextFieldType = priceTextFieldType;
+//    if (_priceTextFieldType == PriceTextFieldTypePrice) {
+//        self.keyboardType = UIKeyboardTypeNumbersAndPunctuation;
+//    } else if (_priceTextFieldType == PriceTextFieldTypeNumber) {
+//        self.keyboardType = UIKeyboardTypeNumberPad;
+//    } else {
+//        self.keyboardType = UIKeyboardTypeDefault;
+//    }
+//}
+
+- (void)setIsPriceType:(BOOL)isPriceType {
+    _isPriceType = isPriceType;
+    
+    if (_isPriceType) {
+        self.keyboardType = UIKeyboardTypeNumbersAndPunctuation;
+    } else {
+        self.keyboardType = UIKeyboardTypeNumberPad;
     }
 }
 
-#pragma mark - Action
-- (void)textFieldDidChange:(UITextField *)textField
+
+#pragma mark - UITextFieldDelegate
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    NSCharacterSet *cs;
+    if (!_isPriceType) {
+        cs = [[NSCharacterSet characterSetWithCharactersInString:myNumbers] invertedSet];
+        NSString *filtered = [[string componentsSeparatedByCharactersInSet:cs] componentsJoinedByString:@""];
+        BOOL basicTest = [string isEqualToString:filtered];
+        if (!basicTest) {
+            [self showMsg:@"只能输入数字"];
+            return NO;
+        }
+    }
+    else {
+        NSUInteger nDotLoc = [textField.text rangeOfString:@"."].location;
+        if (NSNotFound == nDotLoc && 0 != range.location) {
+            cs = [[NSCharacterSet characterSetWithCharactersInString:myDotNumbers] invertedSet];
+        }
+        else {
+            cs = [[NSCharacterSet characterSetWithCharactersInString:myNumbers] invertedSet];
+        }
+        NSString *filtered = [[string componentsSeparatedByCharactersInSet:cs] componentsJoinedByString:@""];
+        BOOL basicTest = [string isEqualToString:filtered];
+        if (!basicTest) {
+            [self showMsg:@"只能输入数字和小数点"];
+            return NO;
+        }
+        if (NSNotFound != nDotLoc && range.location > nDotLoc + 2) {
+            [self showMsg:@"小数点后最多两位"];
+            return NO;
+        }
+    }
+    return YES;
+}
+
+
+- (void)textFieldDidEndEditing:(UITextField *)textField
 {
-    //判断当前字符串和之前的字符串多了什么东西
-    //遍历当前字符串
-    _lastString = [NSMutableString string];
-    
-    NSString *str = textField.text;
-    if (_lastString.length > textField.text.length) {
-        //点击的是删除按钮，不作处理
+    if (textField.text.length == 0) {
         return;
     }
     
-    for (NSInteger i = _lastString.length; i < str.length; i++) {
-        NSRange range = NSMakeRange(_lastString.length, 1);
-        NSString *character = [str substringWithRange:range];
-        
-        if (_type == TextFieldTypePrice)
-        {
-            //判断是否为价格
-            if ([self isPriceString:character]) {
-                [_lastString appendString:character];
-            }
+    if (_isPriceType) {
+        if (![textField.text checkIsFloat]){
+            [self showMsg:@"价格格式不正确!"];
+            textField.text = nil;
         }
         else
         {
-            if ([self isNumberString:character]) {
-                [_lastString appendString:character];
-            }
+            NSString *floatStr = [NSString stringWithFormat:@"%.2f",[textField.text floatValue]];
+            textField.text = floatStr;
         }
-        
-    }
-    textField.text = _lastString;
-}
-
-#pragma mark - Private
-- (BOOL)isPriceString:(NSString *)string
-{
-    if (!([string isEqualToString:@"0"] ||
-          [string isEqualToString:@"1"] ||
-          [string isEqualToString:@"2"] ||
-          [string isEqualToString:@"3"] ||
-          [string isEqualToString:@"4"] ||
-          [string isEqualToString:@"5"] ||
-          [string isEqualToString:@"6"] ||
-          [string isEqualToString:@"7"] ||
-          [string isEqualToString:@"8"] ||
-          [string isEqualToString:@"9"] ||
-          [string isEqualToString:@"."]))
-    {
-        return NO;
-    }
-    return YES;
-}
-
-- (BOOL)isNumberString:(NSString *)string
-{
-    if (!([string isEqualToString:@"0"] ||
-          [string isEqualToString:@"1"] ||
-          [string isEqualToString:@"2"] ||
-          [string isEqualToString:@"3"] ||
-          [string isEqualToString:@"4"] ||
-          [string isEqualToString:@"5"] ||
-          [string isEqualToString:@"6"] ||
-          [string isEqualToString:@"7"] ||
-          [string isEqualToString:@"8"] ||
-          [string isEqualToString:@"9"]))
-    {
-        return NO;
-    }
-    return YES;
-}
-
-/**
- *  判断价格的格式
- *  0.00   5.26
- */
-- (BOOL)decidePriceTextFormat:(NSString *)priceString
-{
-    if (priceString.length == 0){return NO;}
-    
-    //1.先判断是否为一个小数点
-    NSArray *arr = [priceString componentsSeparatedByString:@"."];
-    if (arr.count > 2) {
-        return NO;
-    }
-    
-    //2.小数的位数
-    NSRange range = [priceString rangeOfString:@"." options:NSBackwardsSearch];
-    if (range.location != NSNotFound) {
-        NSString *decimalStr = [priceString substringFromIndex:range.location+1];
-        if (decimalStr.length > 2) {
-            //多于两位小数
-            return NO;
-        }
-        
-        //判断小数点前面是否有值
-        if (range.location==0) {
-            return NO;
+    } else {
+        if (![textField.text checkIsInteger]) {
+            [self showMsg:@"格式不正确!"];
+            textField.text = nil;
         }
     }
     
-    BOOL isPureInt = [self isPureInt:priceString];
-    BOOL isPureFloat = [self isPureFloat:priceString];
-    if (!isPureInt || !isPureFloat) {
-        return NO;
-    }
-    
-    //3.是否未零
-    CGFloat price = [priceString floatValue];
-    if (price == 0) {
-        return NO;
-    }
-    
-    return YES;
+    //    if (!_isPriceType) {
+    //        return;
+    //    }
+    //    //处理 00000.8 ==>  0.80
+    //    if (![textField.text checkIsFloat]) {
+    //        return;
+    //    }
+    //
+    //    NSString *floatStr = [NSString stringWithFormat:@"%.2f",[textField.text floatValue]];
+    //
+    //    textField.text = floatStr;
 }
 
-//判断是否为整形
-- (BOOL)isPureInt:(NSString*)string{
-    NSScanner *scan = [NSScanner scannerWithString:string];
-    int val;
-    return[scan scanInt:&val] && [scan isAtEnd];
+
+#pragma mark - private
+
+- (void)showMsg:(NSString *)msg {
+    UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:nil message:msg delegate:nil cancelButtonTitle:nil otherButtonTitles:@"确定", nil];
+    [alertView show];
 }
 
-//判断是否为浮点形：
-- (BOOL)isPureFloat:(NSString*)string{
-    NSScanner *scan = [NSScanner scannerWithString:string];
-    float val;
-    return[scan scanFloat:&val] && [scan isAtEnd];
-
-}
-
-#pragma mark - UITextFieldDelegate
-- (void)textFieldDidEndEditing:(UITextField *)textField
-{
-    if (self.mDelegate && [self.mDelegate respondsToSelector:@selector(priceTextFieldEndEditing:isQualified:)]) {
-        [self.mDelegate priceTextFieldEndEditing:self isQualified:[self decidePriceTextFormat:textField.text]];
-    }
-}
 
 @end
-

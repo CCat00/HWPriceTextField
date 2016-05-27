@@ -1,39 +1,40 @@
-
-////////////////////////////////////////////////////////////////////////////////
+//
+//  PriceTextField.h
+//  CustomhouseDriver
+//
+//  Created by 韩威 on 16/5/27.
+//  Copyright © 2016年 AndLiSoft. All rights reserved.
+//
 
 #import <UIKit/UIKit.h>
 
-typedef NS_ENUM(NSInteger, TextFieldType) {
-    TextFieldTypePrice,
-    TextFieldTypeNum,
-};
 
-////////////////////////////////////////////////////////////////////////////////
 
-@class HWPriceTextField;
-@protocol HWPriceTextFieldDelegate <NSObject>
+//typedef NS_ENUM(NSInteger, PriceTextFieldType) {
+//
+//    /**
+//     *  Default
+//     */
+//    PriceTextFieldTypeDefault = 0,
+//    /**
+//     *  0~9 .
+//     */
+//    PriceTextFieldTypePrice = 1,
+//
+//    /**
+//     *  0~9
+//     */
+//    PriceTextFieldTypeNumber = 2,
+//};
 
-/**
- *  结束编辑的时候会调用这个方法
- *
- *  @param priceTextField   self
- *  @param m_isQualified    价格是否是正确的格式 (YES 为正确的格式)
- */
-- (void)priceTextFieldEndEditing:(HWPriceTextField *)priceTextField isQualified:(BOOL)m_isQualified;
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////
-
-@interface HWPriceTextField : UITextField
-
-@property (nonatomic, weak) id <HWPriceTextFieldDelegate> mDelegate;
+IB_DESIGNABLE
+@interface PriceTextField : UITextField
 
 /**
- *  输入的类型 (默认是价格类型)
- *  TextFieldTypePrice  价格类型，包含'0~9'和'.'
- *  TextFieldTypeNum    数量类型，包含'0~9'
+ Default value is `PriceTextFieldTypePrice`.
  */
-@property (nonatomic) TextFieldType type;
+//@property (nonatomic, assign) PriceTextFieldType priceTextFieldType;
+
+@property (nonatomic, assign) IBInspectable BOOL isPriceType;
 
 @end
